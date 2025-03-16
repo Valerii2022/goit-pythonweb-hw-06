@@ -89,6 +89,43 @@ def select_10(student_id, teacher_id):
         .distinct().all()
     return results
 
+# Додаткові функції
+
+def select_11(student_id, teacher_id):
+    """Середній бал, який певний викладач ставить певному студенту."""
+    result = session.query(func.round(func.avg(Grade.value), 2).label("avg_grade")) \
+        .join(Subject) \
+        .filter(Subject.teacher_id == teacher_id, Grade.student_id == student_id) \
+        .scalar()
+    return result
+
+def select_12(group_id, subject_id):
+    """Оцінки студентів у певній групі з певного предмета на останньому занятті."""
+    last_lesson_date = session.query(func.max(Grade.date_received)) \
+        .filter(Grade.subject_id == subject_id, Grade.student_id == Student.id, Student.group_id == group_id) \
+        .scalar()
+
+    results = session.query(Student.name, Grade.value) \
+        .join(Grade) \
+        .filter(Grade.subject_id == subject_id, Student.group_id == group_id, Grade.date_received == last_lesson_date) \
+        .all()
+
+    return results
+
+def select_13(student_id, start_date, end_date):
+    """Середній бал студента за певний період (наприклад, за семестр)."""
+    result = session.query(func.round(func.avg(Grade.value), 2).label("avg_grade")) \
+        .filter(Grade.student_id == student_id, Grade.date_received >= start_date, Grade.date_received <= end_date) \
+        .scalar()
+    return result
+
+def select_14(subject_id):
+    """Середній бал на потоці за певний предмет для всіх студентів."""
+    result = session.query(func.round(func.avg(Grade.value), 2).label("avg_grade")) \
+        .filter(Grade.subject_id == subject_id) \
+        .scalar()
+    return result
+
 # Тестування роботи функцій
 
 def print_result(title, data, headers):
@@ -96,15 +133,22 @@ def print_result(title, data, headers):
     print(f"\n{title}")
     print(tabulate(data, headers=headers, tablefmt="grid"))
 
-# print_result("ТОП-5 студентів за середнім балом", select_1(), ["Студент", "Середній бал"])
-# print_result("Студент із найвищим балом з предмета (ID=2)", [select_2(2)], ["Студент", "Середній бал"])
-# print_result("Середній бал у групах по предмету (ID=3)", select_3(3), ["Група", "Середній бал"])
-# print_result("Середній бал по всіх предметах", [[select_4()]], ["Середній бал"])
-# print_result("Курси викладача (ID=4)", select_5(4), ["Курс"])
-# print_result("Студенти групи (ID=2)", select_6(2), ["Студент"])
-# print_result("Оцінки студентів у групі (ID=1) з предмета (ID=1)", select_7(1, 1), ["Студент", "Оцінка"])
-# print_result("Середній бал викладача (ID=3)", [[select_8(3)]], ["Середній бал"])
-# print_result("Курси студента (ID=10)", select_9(10), ["Курс"])
-# print_result("Курси викладача (ID=4) для студента (ID=10)", select_10(10, 4), ["Курс"])
+print_result("ТОП-5 студентів за середнім балом", select_1(), ["Студент", "Середній бал"])
+print_result("Студент із найвищим балом з предмета (ID=2)", [select_2(2)], ["Студент", "Середній бал"])
+print_result("Середній бал у групах по предмету (ID=3)", select_3(3), ["Група", "Середній бал"])
+print_result("Середній бал по всіх предметах", [[select_4()]], ["Середній бал"])
+print_result("Курси викладача (ID=4)", select_5(4), ["Курс"])
+print_result("Студенти групи (ID=2)", select_6(2), ["Студент"])
+print_result("Оцінки студентів у групі (ID=1) з предмета (ID=1)", select_7(1, 1), ["Студент", "Оцінка"])
+print_result("Середній бал викладача (ID=3)", [[select_8(3)]], ["Середній бал"])
+print_result("Курси студента (ID=10)", select_9(10), ["Курс"])
+print_result("Курси викладача (ID=4) для студента (ID=10)", select_10(10, 4), ["Курс"])
+
+# Тестування додаткових функцій
+print_result("Середній бал викладача (ID=4) для студента (ID=1)", [[select_11(1, 4)]], ["Середній бал"])
+print_result("Оцінки студентів у групі (ID=2) з предмета (ID=1) на останньому занятті", select_12(2, 1), ["Студент", "Оцінка"])
+print_result("Середній бал студента (ID=10) за період з 2024-09-01 по 2024-12-31", [[select_13(10, '2024-09-01', '2024-12-31')]], ["Середній бал"])
+print_result("Середній бал по предмету (ID=2) для всіх студентів", [[select_14(2)]], ["Середній бал"])
+
 
 session.close()
